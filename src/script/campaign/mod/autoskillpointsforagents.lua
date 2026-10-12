@@ -1,12 +1,19 @@
 --====================================================================--
---  Agent Auto Skill Management      (autoskillpointsforagents v1.2.0)
+--  Agent Auto Skill Management      (autoskillpointsforagents v1.3.0)
 --====================================================================--
 --  Automatically ticks the "Auto allocate skill points" checkbox (the one
 --  at the top-left of the character skill tree) for the player's
---  agents / heroes whenever they are:
+--  characters whenever they are:
 --      * recruited or summoned onto the map, and
 --      * recovered from being wounded (they exit limbo and return to
 --        the campaign map).
+--
+--  Which characters are affected is configurable through the
+--  "Mod Configuration Tool" (MCT), when it is installed:
+--      * agents / heroes  : ON  by default (original behaviour)
+--      * lords / generals : OFF by default
+--  The toggles live in
+--  script/mct/settings/autoskillpointsforagents_settings.lua.
 --
 --  This mod is purely event driven: it never scans or polls the whole
 --  character list, so it only ever issues context commands for the exact
@@ -39,7 +46,7 @@ if auto_skill_points_for_agents_enabled == nil then
 	auto_skill_points_for_agents_enabled = true;
 end;
 
-local ASPA_VERSION    = "1.2.0";
+local ASPA_VERSION    = "1.3.0";
 local ASPA_LOG_PREFIX = "[autoskillpointsforagents] ";
 
 local function aspa_out(msg)
@@ -50,6 +57,49 @@ local function aspa_out(msg)
 	if ModLog ~= nil then
 		ModLog(text);
 	end;
+end;
+
+
+----------------------------------------------------------------------
+-- Mod Configuration Tool (MCT) integration
+----------------------------------------------------------------------
+-- These keys MUST match
+-- script/mct/settings/autoskillpointsforagents_settings.lua.
+-- When MCT is not installed (get_mct == nil) the mod falls back to the
+-- built-in defaults below, i.e. agents enabled and lords disabled.
+
+local ASPA_MCT_MOD_KEY       = "auto_skill_points_for_agents";
+local ASPA_MCT_OPTION_AGENTS = "auto_agents";
+local ASPA_MCT_OPTION_LORDS  = "auto_lords";
+
+-- Read a checkbox value from MCT, returning `fallback` whenever MCT (or
+-- the option) is unavailable for any reason, so the mod keeps working
+-- even without MCT installed.
+local function aspa_mct_get(option_key, fallback)
+	if get_mct == nil then
+		return fallback;
+	end;
+
+	local ok, value = pcall(function()
+		local mct = get_mct();
+		local mod = mct:get_mod_by_key(ASPA_MCT_MOD_KEY);
+		if mod == nil then
+			return nil;
+		end;
+
+		local option = mod:get_option_by_key(option_key);
+		if option == nil then
+			return nil;
+		end;
+
+		return option:get_selected_setting();
+	end);
+
+	if ok and value ~= nil then
+		return value;
+	end;
+
+	return fallback;
 end;
 
 
@@ -76,8 +126,25 @@ local function aspa_is_local_faction(faction)
 	return faction:name() == cm:get_local_faction_name();
 end;
 
--- Only the player's agents / heroes should be affected (never lords,
--- colonels or ministers, which are not "agents").
+-- Classify a character the mod can handle:
+--   "agent" - heroes / agents (cm:char_is_agent)
+--   "lord"  - lords / generals (cm:char_is_general)
+--   nil     - anything else (colonels, ministers, ...), which is ignored.
+local function aspa_get_category(character)
+	if cm:char_is_agent(character) then
+		return "agent";
+	end;
+
+	if cm:char_is_general(character) then
+		return "lord";
+	end;
+
+	return nil;
+end;
+
+-- Should this character get its auto-management flag turned on?  Only the
+-- player's (local faction) characters are considered, and each category
+-- is gated behind its own MCT toggle (agents on / lords off by default).
 local function aspa_should_auto_manage(character)
 	if not aspa_is_valid_character(character) then
 		return false;
@@ -87,11 +154,15 @@ local function aspa_should_auto_manage(character)
 		return false;
 	end;
 
-	if not cm:char_is_agent(character) then
-		return false;
+	local category = aspa_get_category(character);
+
+	if category == "agent" then
+		return aspa_mct_get(ASPA_MCT_OPTION_AGENTS, true);
+	elseif category == "lord" then
+		return aspa_mct_get(ASPA_MCT_OPTION_LORDS, false);
 	end;
 
-	return true;
+	return false;
 end;
 
 -- Turn the auto-management flag ON for a character.  Never turns it off,
@@ -126,11 +197,14 @@ local function aspa_enable_auto_management(character)
 		);
 	end);
 
+	local category = aspa_get_category(character);
+
 	if set_ok then
-		aspa_out("enabled auto skill allocation for character " .. tostring(cqi));
+		aspa_out("enabled auto skill allocation for " .. tostring(category)
+			.. " " .. tostring(cqi));
 	else
-		aspa_out("could not enable auto skill allocation for character "
-			.. tostring(cqi) .. ": " .. tostring(err));
+		aspa_out("could not enable auto skill allocation for " .. tostring(category)
+			.. " " .. tostring(cqi) .. ": " .. tostring(err));
 	end;
 end;
 

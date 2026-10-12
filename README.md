@@ -1,4 +1,4 @@
-# 事务官自动分配技能点（AutoSkillPointsForAgents）
+# 事务官 / 领主自动分配技能点（AutoSkillPointsForAgents）
 
 一个《全面战争：战锤3》（Total War: WARHAMMER III）的脚本 Mod。
 
@@ -8,6 +8,8 @@
 
 - 被**招募**或**召唤**到战役地图上时；
 - 从**受伤中恢复**、重新回到战役地图时。
+
+默认**只对事务官生效**；领主 / 将军可在配置菜单中单独开启（见下）。
 
 勾选后，该角色升级获得的技能点会按游戏默认逻辑自动分配，省去逐个手动点选的麻烦。
 
@@ -24,8 +26,21 @@
 
 ## 生效范围
 
-- 只影响**玩家（本地派系）**的**事务官 / 英雄**（`cm:char_is_agent`）。
-- 不会影响领主、大臣等非事务官单位，也不会影响 AI 派系。
+- 只影响**玩家（本地派系）**的角色，不会影响 AI 派系。
+- **事务官 / 英雄**（`cm:char_is_agent`）：默认开启自动分配。
+- **领主 / 将军**（`cm:char_is_general`）：默认关闭，可在配置菜单中开启。
+- 不会影响大臣（minister）等其它类型单位。
+
+## 配置（Mod Configuration Tool / MCT）
+
+本 Mod 支持 **mod configuration tools**（MCT）配置菜单，可分别开关事务官与领主：
+
+| 选项 | 默认 | 说明 |
+| --- | --- | --- |
+| 事务官自动分配技能点 | **开** | 招募 / 召唤事务官，或事务官受伤恢复时自动勾选 |
+| 领主自动分配技能点 | **关** | 领主被创建 / 招募，或受伤恢复时自动勾选 |
+
+未安装 MCT 时，Mod 使用上述内置默认值（事务官开、领主关），功能照常工作。
 
 ## 实现原理
 
@@ -58,7 +73,7 @@ common.call_context_command("CcoCampaignCharacter", cqi, "AutoManagementContext.
 ## 目录结构
 
 ```
-src/      Mod 源码（Lua 脚本）
+src/      Mod 源码（Lua 脚本，含 MCT 配置页 script/mct/settings/）
 dist/     打包好的 .pack 与缩略图
 tools/    构建 / 解析辅助脚本（不随 Mod 发布）
 ```
