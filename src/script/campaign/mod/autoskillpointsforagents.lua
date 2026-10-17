@@ -1,5 +1,5 @@
 --====================================================================--
---  Agent Auto Skill Management      (autoskillpointsforagents v1.3.0)
+--  Agent Auto Skill Management      (autoskillpointsforagents v1.4.0)
 --====================================================================--
 --  Automatically ticks the "Auto allocate skill points" checkbox (the one
 --  at the top-left of the character skill tree) for the player's
@@ -15,9 +15,17 @@
 --  The toggles live in
 --  script/mct/settings/autoskillpointsforagents_settings.lua.
 --
---  This mod is purely event driven: it never scans or polls the whole
---  character list, so it only ever issues context commands for the exact
---  characters the game tells us about.
+--  The mod is event driven: it never polls the whole character list, it
+--  only reacts to the characters the game tells us about.  One single
+--  sweep of the local faction is done on the first local turn so that
+--  characters that already existed when the mod was installed are picked
+--  up as well (installing a script mod mid campaign fires no events for
+--  characters that were created before it was loaded).
+--
+--  This mod is intentionally scoped to skill point allocation only.  The
+--  one-click equipment feature was split off into its own mod
+--  "AutoEquipRareAncillaries" (script/campaign/mod/auto_equip_rare_ancillaries.lua)
+--  so that the two can be enabled independently.
 --
 --  How it works
 --  ------------
@@ -46,7 +54,7 @@ if auto_skill_points_for_agents_enabled == nil then
 	auto_skill_points_for_agents_enabled = true;
 end;
 
-local ASPA_VERSION    = "1.3.0";
+local ASPA_VERSION    = "1.4.0";
 local ASPA_LOG_PREFIX = "[autoskillpointsforagents] ";
 
 local function aspa_out(msg)
@@ -118,12 +126,14 @@ local function aspa_is_local_faction(faction)
 		return false;
 	end;
 
-	if faction:is_human() then
-		-- single player, or the local player in a multiplayer campaign
+	-- the local player's faction, in single player as well as in a
+	-- multiplayer campaign (where other human factions are "human" too
+	-- but must not be touched)
+	if faction:name() == cm:get_local_faction_name() then
 		return true;
 	end;
 
-	return faction:name() == cm:get_local_faction_name();
+	return faction:is_human();
 end;
 
 -- Classify a character the mod can handle:
@@ -227,6 +237,48 @@ local function aspa_enable_for_character(character)
 end;
 
 ----------------------------------------------------------------------
+-- one-off catch-up sweep
+----------------------------------------------------------------------
+-- Installing a script mod into a running campaign fires no CharacterCreated
+-- / CharacterRecruited event for the characters that already exist, so
+-- those would never get the checkbox ticked.  On the very first local turn
+-- we therefore walk the local faction's character list once and treat each
+-- character like a freshly created one.
+--
+-- The listener removes itself (persistent = false) after the first local
+-- turn, so there is no per-turn polling afterwards - the mod stays
+-- event driven.
+
+local aspa_initial_sweep_done = false;
+
+local function aspa_do_initial_sweep(faction)
+	if aspa_initial_sweep_done then
+		return;
+	end;
+
+	if not aspa_is_local_faction(faction) then
+		return;
+	end;
+
+	aspa_initial_sweep_done = true;
+
+	local count = 0;
+
+	local characters = faction:character_list();
+	for i = 0, characters:num_items() - 1 do
+		local character = characters:item_at(i);
+		if aspa_should_auto_manage(character) then
+			aspa_enable_auto_management(character);
+			count = count + 1;
+		end;
+	end;
+
+	aspa_out("initial sweep of " .. tostring(faction:name())
+		.. ": checked " .. tostring(count) .. " character(s)");
+end;
+
+
+----------------------------------------------------------------------
 -- entry point - called automatically on the first campaign tick.
 -- NOTE: name MUST equal the (lower-cased) file name, i.e. all lower case.
 ----------------------------------------------------------------------
@@ -279,6 +331,18 @@ function autoskillpointsforagents()
 			aspa_enable_for_character(context:character());
 		end,
 		true
+	);
+
+	-- First local turn: pick up characters that existed before the mod was
+	-- installed.  Non-persistent, so it is gone after that single turn.
+	core:add_listener(
+		"autoskillpointsforagents_initial_sweep",
+		"FactionTurnStart",
+		true,
+		function(context)
+			aspa_do_initial_sweep(context:faction());
+		end,
+		false
 	);
 
 	aspa_out("v" .. ASPA_VERSION .. " loaded");

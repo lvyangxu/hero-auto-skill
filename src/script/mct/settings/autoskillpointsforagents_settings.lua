@@ -1,7 +1,7 @@
---====================================================================--
+-- =====================================================================
 --  AutoSkillPointsForAgents - MCT settings page
 --  (script/mct/settings/autoskillpointsforagents_settings.lua)
---====================================================================--
+-- =====================================================================
 --  Registers the mod in the "Mod Configuration Tool" (MCT) so the player
 --  can choose, per character category, whether skill points should be
 --  auto-allocated:
@@ -40,3 +40,9 @@ local lords = mod:add_new_option("auto_lords", "checkbox");
 lords:set_default_value(false);
 lords:set_text("领主自动分配技能点");
 lords:set_tooltip_text("领主被招募 / 创建，或从受伤中恢复、重新回到地图时，自动为其勾选「自动分配技能点数」。默认关闭。");
+
+-- =====================================================================
+-- NOTE: the one-click equipment options that used to live here have moved
+-- to the standalone mod "AutoEquipRareAncillaries", see its own
+-- script/mct/settings/auto_equip_rare_ancillaries_settings.lua.
+-- =====================================================================

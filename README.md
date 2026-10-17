@@ -13,6 +13,9 @@
 
 勾选后，该角色升级获得的技能点会按游戏默认逻辑自动分配，省去逐个手动点选的麻烦。
 
+> **「一键装备蓝色装备」已拆分为独立 Mod**（`AutoEquipRareAncillaries`）。
+> 本 Mod 现在只负责「自动分配技能点」这一件事，两个 Mod 可以分开启用 / 停用。
+
 ## 触发时机（事件驱动）
 
 本 Mod **完全基于事件触发，不扫描、不轮询**整个角色列表，只对游戏明确告知的角色发出指令：
@@ -24,6 +27,8 @@
 | `UniqueAgentSpawned` | 特殊 / 传奇事务官被召唤 |
 | `CharacterExitsLimboEvent` | 角色离开 limbo、回到地图（例如受伤恢复） |
 
+例外：**首次进入本地回合时会补扫一次**当前派系的角色列表。中途安装脚本 Mod 时，已有角色不会触发上面任何一个事件，这一次补扫只为把他们补上；监听器随后自动移除（`persistent = false`），之后仍然完全事件驱动。
+
 ## 生效范围
 
 - 只影响**玩家（本地派系）**的角色，不会影响 AI 派系。
@@ -33,14 +38,14 @@
 
 ## 配置（Mod Configuration Tool / MCT）
 
-本 Mod 支持 **mod configuration tools**（MCT）配置菜单，可分别开关事务官与领主：
+本 Mod 支持 **mod configuration tools**（MCT）配置菜单：
 
 | 选项 | 默认 | 说明 |
 | --- | --- | --- |
 | 事务官自动分配技能点 | **开** | 招募 / 召唤事务官，或事务官受伤恢复时自动勾选 |
 | 领主自动分配技能点 | **关** | 领主被创建 / 招募，或受伤恢复时自动勾选 |
 
-未安装 MCT 时，Mod 使用上述内置默认值（事务官开、领主关），功能照常工作。
+未安装 MCT 时，Mod 使用上述内置默认值，功能照常工作。
 
 ## 实现原理
 
@@ -73,7 +78,8 @@ common.call_context_command("CcoCampaignCharacter", cqi, "AutoManagementContext.
 ## 目录结构
 
 ```
-src/      Mod 源码（Lua 脚本，含 MCT 配置页 script/mct/settings/）
+src/
+  script/campaign/mod/autoskillpointsforagents.lua          自动分配技能点
 dist/     打包好的 .pack 与缩略图
 tools/    构建 / 解析辅助脚本（不随 Mod 发布）
 ```
