@@ -3,7 +3,8 @@
 - 标题：`title.txt`
 - 描述：`description.bbcode`（直接复制到 Steam 创意工坊描述框，支持 BBCode）
 - 更新说明：`change_notes.txt`（填到工坊的 Change Notes / 更新说明栏，不要塞进描述）
-- 缩略图：`../dist/AutoSkillPointsForAgents.png`
+- 缩略图：`../dist/AutoSkillPointsForAgents.png`（512×512 官方主视觉 + 技能树勾选符文，已设为发布图）
+- 备选封面：`cover_mage.png`（512×512 蓝魔法 / 法师构图）
 - 建议标签（按创意工坊实际可选）：`Campaign`、`UI`、`Quality of Life`
 - 适用游戏版本：9.0.4
 - Mod 版本：1.4.1
