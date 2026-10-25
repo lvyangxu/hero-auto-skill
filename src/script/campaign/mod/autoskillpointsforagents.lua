@@ -1,5 +1,5 @@
 --====================================================================--
---  Agent Auto Skill Management      (autoskillpointsforagents v1.4.0)
+--  Agent Auto Skill Management      (autoskillpointsforagents v1.4.1)
 --====================================================================--
 --  Automatically ticks the "Auto allocate skill points" checkbox (the one
 --  at the top-left of the character skill tree) for the player's
@@ -54,7 +54,7 @@ if auto_skill_points_for_agents_enabled == nil then
 	auto_skill_points_for_agents_enabled = true;
 end;
 
-local ASPA_VERSION    = "1.4.0";
+local ASPA_VERSION    = "1.4.1";
 local ASPA_LOG_PREFIX = "[autoskillpointsforagents] ";
 
 local function aspa_out(msg)

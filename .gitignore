@@ -4,6 +4,8 @@
 # ignore everything else under tools/.
 tools/*
 !tools/*.py
+# one-off scratch scripts, not part of the build
+tools/_*.py
 
 # Python caches
 __pycache__/

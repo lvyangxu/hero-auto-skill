@@ -28,7 +28,8 @@ local mct = get_mct();
 
 local mod = mct:register_mod("auto_skill_points_for_agents");
 mod:set_title("事务官 / 领主自动分配技能点");
-mod:set_author("chashaobao");
+-- 不调用 set_author()：MCT 只有在 author 非空时才会创建 "Created by:" 行，
+-- 这样配置页只显示 Mod 名字。
 mod:set_description("自动勾选角色技能树左上角的「自动分配技能点数」。可分别控制事务官与领主，默认只对事务官开启。");
 
 local agents = mod:add_new_option("auto_agents", "checkbox");
